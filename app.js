@@ -3,7 +3,7 @@ var app = express();
 var logger = require('morgan');
 
 /******* Constants ***************/
-var HTTP_PORT = 3000;
+var HTTP_PORT = (process.env.PORT || 3000);
 var UDP_PORT = 4000;
 
 /*********************************/
