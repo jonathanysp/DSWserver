@@ -1,0 +1,21 @@
+{
+  "name": "SafewalkDroneServer",
+  "version": "0.0.0",
+  "description": "Server to handle marshalling data from mobile app and drones",
+  "main": "app.js",
+  "dependencies": {
+    "express": "~4.12.2",
+    "morgan": "~1.5.1"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathanysp/SWDserver.git"
+  },
+  "author": "jonathanysp,chizu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonathanysp/SWDserver/issues"
+  },
+  "homepage": "https://github.com/jonathanysp/SWDserver"
+}
