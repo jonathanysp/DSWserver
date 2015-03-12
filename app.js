@@ -50,7 +50,7 @@ mobileRoute.get('/', function(req, res) {
 mobileRoute.post('/data', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/data", body: req.body});
-	res.sendStatus(200);
+	res.json({});
 });
 
 /*
@@ -62,7 +62,7 @@ mobileRoute.post('/data', function(req, res) {
 mobileRoute.post('/request', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/request", body: req.body});
-	res.sendStatus(200);
+	res.json({});
 });
 
 /*
@@ -74,7 +74,7 @@ mobileRoute.post('/request', function(req, res) {
 mobileRoute.post('/unpair', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/unpair", body: req.body});
-	res.sendStatus(200);
+	res.json({});
 });
 
 /*
@@ -87,7 +87,7 @@ mobileRoute.post('/unpair', function(req, res) {
 mobileRoute.post('/cmd', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/cmd", body: req.body});
-	res.sendStatus(200);
+	res.json({});
 });
 
 app.use('/mobile', mobileRoute);
