@@ -1,14 +1,17 @@
 var express = require('express');
 var app = express();
 var logger = require('morgan');
+var bodyParser = require("body-parser");
 
 /******* Constants ***************/
-var HTTP_PORT = (process.env.PORT || 3000);
+var HTTP_PORT = (process.env.PORT || 80);
 var UDP_PORT = 4000;
 
 /*********************************/
 
 app.use(logger('dev'));
+//app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
 
 /*********************************/
 
@@ -40,7 +43,7 @@ mobileRoute.get('/', function(req, res) {
  */
 mobileRoute.post('/data', function(req, res) {
 	console.log(req.body);
-	res.send(200);
+	res.sendStatus(200);
 });
 
 /*
@@ -51,7 +54,8 @@ mobileRoute.post('/data', function(req, res) {
  */
 mobileRoute.post('/request', function(req, res) {
 	console.log(req.body);
-	res.send(200);
+	console.log(req.body.id);
+	res.sendStatus(200);
 });
 
 /*
@@ -63,7 +67,7 @@ mobileRoute.post('/request', function(req, res) {
  */
 mobileRoute.post('/cmd', function(req, res) {
 	console.log(req.body);
-	res.send(200);
+	res.sendStatus(200);
 });
 
 app.use('/mobile', mobileRoute);
