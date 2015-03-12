@@ -2,9 +2,11 @@ var express = require('express');
 var app = express();
 var logger = require('morgan');
 var bodyParser = require("body-parser");
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
 
 /******* Constants ***************/
-var HTTP_PORT = (process.env.PORT || 80);
+var HTTP_PORT = (process.env.PORT || 3000);
 var UDP_PORT = 4000;
 
 /*********************************/
@@ -20,6 +22,10 @@ var router = express.Router();
 router.get('/', function(req, res) {
 	res.send('hello world');
 });
+
+router.get('/dash', function(req, res) {
+	res.sendFile(__dirname + '/public/dash.html');
+})
 
 app.use('/', router);
 
@@ -43,6 +49,7 @@ mobileRoute.get('/', function(req, res) {
  */
 mobileRoute.post('/data', function(req, res) {
 	console.log(req.body);
+	io.emit('log', {target: "/data", body: req.body});
 	res.sendStatus(200);
 });
 
@@ -55,6 +62,7 @@ mobileRoute.post('/data', function(req, res) {
 mobileRoute.post('/request', function(req, res) {
 	console.log(req.body);
 	console.log(req.body.id);
+	io.emit('log', {target: "/request", body: req.body});
 	res.sendStatus(200);
 });
 
@@ -67,12 +75,14 @@ mobileRoute.post('/request', function(req, res) {
  */
 mobileRoute.post('/cmd', function(req, res) {
 	console.log(req.body);
+	io.emit('log', {target: "/cmd", body: req.body});
 	res.sendStatus(200);
 });
 
 app.use('/mobile', mobileRoute);
 
-app.listen(HTTP_PORT);
+server.listen(HTTP_PORT);
+//app.listen(HTTP_PORT);
 console.log("HTTP on port: " + HTTP_PORT);
 
 /************************************/
