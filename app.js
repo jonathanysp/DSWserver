@@ -71,7 +71,7 @@ mobileRoute.post('/request', function(req, res) {
  * 		id: String,
  * }
  */
-mobileRoute.post'/unpair', function(req, res) {
+mobileRoute.post('/unpair', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/unpair", body: req.body});
 	res.sendStatus(200);
