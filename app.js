@@ -102,10 +102,12 @@ var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 
 server.on('message', function(message) {
-	console.log("==== Recv UDP Message ====");
-	console.log(message.toString());
+	// console.log("==== Recv UDP Message ====");
+	// console.log(message.toString());
 	try {
-		console.log(JSON.parse(message.toString()));
+		var json = JSON.parse(message.toString());
+		// console.log(json);
+		io.emit('log', {target: "UDP", body: json});
 	} catch (e) {
 		console.log(e);
 	}
