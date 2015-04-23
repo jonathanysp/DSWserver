@@ -361,6 +361,8 @@ front = {latitude: 41.824480, longitude: -71.392515};
 back = new Point(41.824469, -71.392677);
 front = new Point(41.824480, -71.392515);
 var target = new Point(41.823333, -71.388889);
+{ latitude: 41.8232109, longitude: -71.3890288 }
+
 
 replServer.context.target = target;
 
