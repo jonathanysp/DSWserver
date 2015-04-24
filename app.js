@@ -247,11 +247,20 @@ function curLoc() {
 
 function offsetHeading(heading) {
 	raw = heading - currentDrone.offset;
+	var ret;
 	if (raw < 0) {
-		return 360 + raw;
+		ret = 360 + raw;
 	} else {
-		return raw;
+		ret = raw;
 	}
+	
+	if (ret > 360) {
+		currentDrone.client.stop();
+		currentDrone.client.land();
+		console.log("PANIC: Heading too large: " + ret);
+	}
+
+	return ret;
 }
 
 function turnToHeading(deg, cb) {
@@ -273,11 +282,45 @@ function turnToHeading(deg, cb) {
 	}, 100)
 }
 
+function move2(target, cb) {
+	var start = currentDrone.loc;
+
+	var startTargetDist = geolib.getDistance(start, target);
+	if (startTargetDist < 2) {
+		return;
+	}
+
+	current.client.front(0.1);
+	console.log("moving forward");
+
+	var checkInterval = setInterval(function() {
+		targetDroneDist = geolib.getDistance(currentDrone.loc, target);
+		startDroneDist = geolib.getDistance(currentDrone.loc, start);
+		
+		if (startDroneDist < startTargetDist) {
+			//keep going
+			console.log(targetDroneDist);
+			return;
+		} else if(targetDroneDist < 2) {
+			//arrived
+			console.log("Arrived!");
+		} else if (startDroneDist > startTargetDist) {
+			//Overrun
+			console.log("OVERRUN!")
+		}
+		clearInterval(checkInterval)
+		currentDrone.client.stop();
+
+	}, 100);
+
+
+}
+
 function moveTowards(point, cb) {
 	cb = cb || function() {};
 	var prevDistance;
 	var distance = geolib.getDistance(point, currentDrone.loc);
-	if (distance < 3) {
+	if (distance < 2) {
 		return;
 	}
 	currentDrone.client.front(0.1);
