@@ -21,13 +21,13 @@ var SUCCESS = 0;
 
 /*********************************/
 /*
-currentClient = {
+phone = {
 	id: string,
 	lat: float,
 	lon: float,
 }
 
-currentDrone = {
+drone = {
 	id: string,
 	lat: float,
 	lon: float,
@@ -37,8 +37,8 @@ currentDrone = {
 }
 
 */
-var currentClient = {};
-var currentDrone = {};
+var phone = {};
+var drone = {};
 var go = false;
 
 /*********************************/
@@ -81,8 +81,8 @@ mobileRoute.get('/', function(req, res) {
 mobileRoute.post('/data', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/data", body: req.body});
-	currentClient.lat = req.body.lat;
-	currentClient.lon = req.body.lon;
+	phone.lat = req.body.lat;
+	phone.lon = req.body.lon;
 	res.json({});
 });
 
@@ -96,8 +96,8 @@ mobileRoute.post('/request', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/request", body: req.body});
 
-	if (currentClient !== null) {
-		currentClient = req.body.id;
+	if (phone !== null) {
+		phone = req.body.id;
 		res.json({
 			status: SUCCESS
 		});
@@ -120,8 +120,8 @@ mobileRoute.post('/unpair', function(req, res) {
 	console.log(req.body);
 	io.emit('log', {target: "/unpair", body: req.body});
 
-	if (currentClient === req.body.id) {
-		currentClient === null;
+	if (phone === req.body.id) {
+		phone === null;
 		//land drone
 		res.json({
 			status: SUCCESS
@@ -160,8 +160,8 @@ console.log("HTTP on port: " + HTTP_PORT);
 // server.on('message', function(message) {
 // 	try {
 // 		var json = JSON.parse(message.toString());
-// 		currentClient.lat = json.lat;
-// 		currentClient.lon = json.lon;
+// 		phone.lat = json.lat;
+// 		phone.lon = json.lon;
 // 		// console.log(json);
 // 		io.emit('log', {target: "UDP", body: json});
 // 	} catch (e) {
@@ -175,14 +175,17 @@ console.log("HTTP on port: " + HTTP_PORT);
 var net = require('net');
 
 net.createServer(function(socket) {
-	socket.on('data', function(data){ 
+	socket.on('data', function(data){
+		console.log(data.toString());
 		try {
 			var json = JSON.parse(data.toString());
-			currentClient.lat = json.lat;
-			currentClient.lon = json.lon;
+			phone.lat = json.lat;
+			phone.lon = json.lon;
+			phone.loc = {latitude: json.lat, longitude: json.lon}
 			// console.log(json);
 			io.emit('log', {target: "GPS", body: json});
 		} catch (e) {
+			console.log("bad");
 			console.log(e);
 		}
 	})
@@ -193,15 +196,15 @@ net.createServer(function(socket) {
 
 /***** DEBUG REPL CONTROL *****/
 function connect() {
-	currentDrone.client = arDrone.createClient();
-	currentDrone.offset = 0;
-	currentDrone.client.config('general:navdata_demo', 'FALSE');
+	drone.client = arDrone.createClient();
+	drone.offset = 0;
+	drone.client.config('general:navdata_demo', 'FALSE');
 	console.log('drone connected');
-	currentDrone.client.on('navdata', function(data) {
+	drone.client.on('navdata', function(data) {
 		try {
-			currentDrone.lat = data.gps.latitude;
-			currentDrone.lon = data.gps.longitude;
-			currentDrone.loc = {
+			drone.lat = data.gps.latitude;
+			drone.lon = data.gps.longitude;
+			drone.loc = {
 				latitude: data.gps.latitude,
 				longitude: data.gps.longitude
 			}
@@ -210,7 +213,7 @@ function connect() {
 		}
 
 		try {
-		currentDrone.heading = 
+		drone.heading = 
 			offsetHeading(data.magneto.heading.fusionUnwrapped + 180);
 		} catch(e) {
 			console.log(e);
@@ -220,33 +223,33 @@ function connect() {
 }
 
 function turn() {
-	if (currentDrone) {
-		currentDrone.client
+	if (drone) {
+		drone.client
 		.after(0, function() {
-			clockwise(0.3);
+			drone.client.clockwise(0.3);
 		})
 		.after(500, function() {
-			this.stop();
+			drone.client.stop();
 		})
 		// clockwise(0.1);
-		// currentDrone.client.after(100, function() {this.stop()});
+		// drone.client.after(100, function() {this.stop()});
 	}
 }
 
 function setNorth() {
-	currentDrone.offset = currentDrone.heading;
+	drone.offset = drone.heading;
 }
 
 function curHeading() {
-	console.log(currentDrone.heading);
+	console.log(drone.heading);
 }
 
 function curLoc() {
-	console.log(currentDrone.loc);
+	console.log(drone.loc);
 }
 
 function offsetHeading(heading) {
-	raw = heading - currentDrone.offset;
+	raw = heading - drone.offset;
 	var ret;
 	if (raw < 0) {
 		ret = 360 + raw;
@@ -255,47 +258,49 @@ function offsetHeading(heading) {
 	}
 	
 	if (ret > 360) {
-		currentDrone.client.stop();
-		currentDrone.client.land();
-		console.log("PANIC: Heading too large: " + ret);
+		// drone.client.stop();
+		// drone.client.land();
+		// console.log("PANIC: Heading too large: " + ret + "offset: " + drone.offset);
+		// console.log("MOD: " + (ret % 360));
+		return ret % 360;
 	}
 
 	return ret;
 }
 
-function turnToHeading(deg, cb) {
+function turnTo(deg, cb) {
 	cb = cb || function(){};
-	if (Math.abs(deg - currentDrone.heading) < 5) {
+	if (Math.abs(deg - drone.heading) < 5) {
 		return;
 	}
-	currentDrone.client.clockwise(0.5);
+	drone.client.clockwise(0.5);
 	console.log("turning");
 	var checkInterval = setInterval(function() {
-		if (Math.abs(deg - currentDrone.heading) < 5) {
+		if (Math.abs(deg - drone.heading) < 7.5) {
 			console.log("STOP!");
 			clearInterval(checkInterval);
-			currentDrone.client.stop();
+			drone.client.stop();
 			cb();
 		} else {
-			console.log(Math.abs(deg - currentDrone.heading));
+			console.log(Math.abs(deg - drone.heading));
 		}
 	}, 100)
 }
 
 function move2(target, cb) {
-	var start = currentDrone.loc;
+	var start = drone.loc;
 
 	var startTargetDist = geolib.getDistance(start, target);
 	if (startTargetDist < 2) {
 		return;
 	}
 
-	current.client.front(0.1);
+	drone.client.front(0.1);
 	console.log("moving forward");
 
 	var checkInterval = setInterval(function() {
-		targetDroneDist = geolib.getDistance(currentDrone.loc, target);
-		startDroneDist = geolib.getDistance(currentDrone.loc, start);
+		targetDroneDist = geolib.getDistance(drone.loc, target);
+		startDroneDist = geolib.getDistance(drone.loc, start);
 		
 		if (startDroneDist < startTargetDist) {
 			//keep going
@@ -303,14 +308,19 @@ function move2(target, cb) {
 			return;
 		} else if(targetDroneDist < 2) {
 			//arrived
+			clearInterval(checkInterval)
+			drone.client.stop();
 			console.log("Arrived!");
 		} else if (startDroneDist > startTargetDist) {
 			//Overrun
+			clearInterval(checkInterval)
+			drone.client.stop();
 			console.log("OVERRUN!")
+		} else {
+			console.log(startDroneDist);
+			console.log(startTargetDist);
+			console.log(targetDroneDist);
 		}
-		clearInterval(checkInterval)
-		currentDrone.client.stop();
-
 	}, 100);
 
 
@@ -319,24 +329,24 @@ function move2(target, cb) {
 function moveTowards(point, cb) {
 	cb = cb || function() {};
 	var prevDistance;
-	var distance = geolib.getDistance(point, currentDrone.loc);
+	var distance = geolib.getDistance(point, drone.loc);
 	if (distance < 2) {
 		return;
 	}
-	currentDrone.client.front(0.1);
+	drone.client.front(0.1);
 	console.log("moving forward");
 	var checkInterval = setInterval(function() {
 		prevDistance = distance;
-		distance = geolib.getDistance(point, currentDrone.loc);
+		distance = geolib.getDistance(point, drone.loc);
 		if (distance < 2) {
 			console.log("STOP!");
 			clearInterval(checkInterval);
-			currentDrone.client.stop();
+			drone.client.stop();
 		} else {
 			// if (prevDistance > distance) {
 			// 	console.log("OVERUNN!!!");
 			// 	clearInterval(checkInterval);
-			// 	currentDrone.client.stop();
+			// 	drone.client.stop();
 			// }
 			console.log(distance);
 		}
@@ -344,10 +354,10 @@ function moveTowards(point, cb) {
 }
 
 function goToPoint(point) {
-	if (geolib.getDistance(currentDrone.loc, point) < 3) {
+	if (geolib.getDistance(drone.loc, point) < 3) {
 		return;
 	}
-	var heading = getBearing(currentDrone.loc, point);
+	var heading = getBearing(drone.loc, point);
 	turnToHeading(heading, function() {
 		moveTowards(point, function() {
 			console.log("DONE!");
@@ -363,12 +373,12 @@ function goToPoint(point) {
 }
 
 function takeoff() {
-	currentDrone.client.takeoff();
+	drone.client.takeoff();
 }
 
 function land() {
-	currentDrone.client.stop();
-	currentDrone.client.land();
+	drone.client.stop();
+	drone.client.land();
 }
 
 process.on('SIGINT', function() {
@@ -382,19 +392,24 @@ process.on('exit', function() {
 	land();
 });
 
-replServer.context.currentDrone = currentDrone;
-replServer.context.currentClient = currentClient;
+replServer.context.drone = drone;
+replServer.context.phone = phone;
 replServer.context.connect = connect;
 replServer.context.turn = turn;
 replServer.context.setNorth = setNorth;
-replServer.context.turnToHeading = turnToHeading;
+replServer.context.turnTo = turnTo;
 replServer.context.goToPoint = goToPoint;
 replServer.context.land = land;
 replServer.context.takeoff = takeoff;
 replServer.context.curHeading = curHeading;
 replServer.context.curLoc = curLoc;
-replServer.context.curClientLoc = currentClient
+replServer.context.curClientLoc = phone
 replServer.context.moveTowards = moveTowards;
+replServer.context.moveTo = move2;
+replServer.context.target = { latitude: 41.8245307,
+  longitude: -71.3995923 }
+
+
 
 
 /**************************/
@@ -403,11 +418,11 @@ back = {latitude: 41.824469, longitude: -71.392677};
 front = {latitude: 41.824480, longitude: -71.392515};
 back = new Point(41.824469, -71.392677);
 front = new Point(41.824480, -71.392515);
-var target = new Point(41.823333, -71.388889);
-{ latitude: 41.8232109, longitude: -71.3890288 }
+// var target = new Point(41.823333, -71.388889);
+// { latitude: 41.8232109, longitude: -71.3890288 }
 
 
-replServer.context.target = target;
+// replServer.context.target = target;
 
 console.log(geolib.getDistance(back, front));
 console.log(getBearing(back, front));
@@ -443,3 +458,6 @@ function getBearing(from, to) {
     res = toDegrees(Math.atan2(y, x));
     return Math.round((res + 360) % 360);
 }
+
+replServer.context.getBearing = getBearing;
+replServer.context.getDistance = geolib.getDistance;
